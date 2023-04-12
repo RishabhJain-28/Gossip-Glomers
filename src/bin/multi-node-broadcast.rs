@@ -129,6 +129,10 @@ impl Node<(), Payload, InjectedPayload> for BroadcastNode {
                         reply.send(output).context("reply to topology")?;
                     }
                     Payload::Gossip { seen } => {
+                        self.known
+                            .get_mut(&reply.dest)
+                            .expect("got gossip from unknown node")
+                            .extend(seen.iter().copied());
                         // reply.body.payload = Payload::Gossip { seen:  };
                         self.messages.extend(seen);
                     }
