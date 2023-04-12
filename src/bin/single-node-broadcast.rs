@@ -28,20 +28,27 @@ enum Payload {
 struct BroadcastNode {
     id: usize,
     messages: Vec<usize>,
-    node: String,
+    _node: String,
 }
-impl Node<(), Payload> for BroadcastNode {
-    fn from_init(_init_state: (), init: Init) -> anyhow::Result<Self>
+impl Node<(), Payload, ()> for BroadcastNode {
+    fn from_init(
+        _init_state: (),
+        init: Init,
+        _tx: std::sync::mpsc::Sender<Event<Payload>>,
+    ) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
         Ok(BroadcastNode {
             id: 1,
             messages: Vec::new(),
-            node: init.node_id,
+            _node: init.node_id,
         })
     }
-    fn step(&mut self, input: Message<Payload>, output: &mut StdoutLock) -> anyhow::Result<()> {
+    fn step(&mut self, input: Event<Payload>, output: &mut StdoutLock) -> anyhow::Result<()> {
+        let Event::Message(input) = input else{
+            panic!("got inhjected event when there is no event injection ");
+        };
         let mut reply = input.into_reply(Some(&mut self.id));
 
         match reply.body.payload {
@@ -73,5 +80,5 @@ impl Node<(), Payload> for BroadcastNode {
 }
 
 fn main() -> anyhow::Result<()> {
-    main_loop::<_, BroadcastNode, _>(())
+    main_loop::<_, BroadcastNode, _, ()>(())
 }
